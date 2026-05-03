@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — PanoramaForge</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .page-layout {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 32px 24px;
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    /* ─── Upload Panel ────────────────────────────────────────────────── */
+    .upload-panel { position: sticky; top: 80px; }
+
+    .drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius-lg);
+      padding: 32px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all var(--transition);
+      background: var(--bg-card);
+      position: relative;
+    }
+
+    .drop-zone:hover,
+    .drop-zone.drag-over {
+      border-color: var(--accent);
+      background: var(--accent-subtle);
+    }
+
+    .drop-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    .drop-icon {
+      font-size: 2rem;
+      margin-bottom: 12px;
+      opacity: 0.6;
+    }
+
+    .drop-zone h3 {
+      font-size: 0.95rem;
+      margin-bottom: 6px;
+    }
+
+    .drop-zone p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* ─── Preview Grid ────────────────────────────────────────────────── */
+    .preview-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin-top: 14px;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+
+    .preview-thumb {
+      aspect-ratio: 1;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      background: var(--bg-hover);
+      position: relative;
+    }
+
+    .preview-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .preview-thumb .remove-btn {
+      position: absolute;
+      top: 3px;
+      right: 3px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-size: 0.65rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity var(--transition);
+    }
+
+    .preview-thumb:hover .remove-btn { opacity: 1; }
+
+    /* ─── Camera ──────────────────────────────────────────────────────── */
+    .camera-section {
+      margin-top: 12px;
+      display: none;
+    }
+
+    .camera-section.active { display: block; }
+
+    #camera-video {
+      width: 100%;
+      border-radius: var(--radius);
+      background: #000;
+      aspect-ratio: 4/3;
+      object-fit: cover;
+    }
+
+    /* ─── Upload controls ─────────────────────────────────────────────── */
+    .upload-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .title-input-row { display: flex; gap: 8px; align-items: center; }
+
+    /* ─── Progress ────────────────────────────────────────────────────── */
+    .upload-progress {
+      margin-top: 12px;
+      display: none;
+    }
+    .upload-progress.visible { display: block; }
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    /* ─── Gallery Panel ───────────────────────────────────────────────── */
+    .gallery-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .gallery-header h2 { font-size: 1.1rem; }
+
+    .gallery-count {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      padding: 3px 10px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+    }
+
+    /* ─── Panorama Grid ───────────────────────────────────────────────── */
+    .panorama-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 16px;
+    }
+
+    .pano-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      transition: border-color var(--transition), transform var(--transition);
+      animation: cardIn 0.3s ease both;
+    }
+
+    .pano-card:hover {
+      border-color: var(--border-light);
+      transform: translateY(-2px);
+    }
+
+    .pano-thumb {
+      aspect-ratio: 21/9;
+      overflow: hidden;
+      background: var(--bg-hover);
+      position: relative;
+      cursor: pointer;
+    }
+
+    .pano-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.4s ease;
+    }
+
+    .pano-card:hover .pano-thumb img { transform: scale(1.03); }
+
+    .pano-thumb-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity var(--transition);
+    }
+
+    .pano-card:hover .pano-thumb-overlay { opacity: 1; }
+
+    .pano-view-btn {
+      background: rgba(0,0,0,0.6);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: var(--radius);
+      color: white;
+      padding: 8px 16px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* Placeholder for processing/failed */
+    .pano-placeholder {
+      aspect-ratio: 21/9;
+      background: var(--bg-hover);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 8px;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+    }
+
+    .pano-info {
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .pano-info-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .pano-title {
+      font-family: var(--font-display);
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .pano-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .pano-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    /* ─── Load More ───────────────────────────────────────────────────── */
+    .load-more-row {
+      margin-top: 24px;
+      text-align: center;
+    }
+
+    /* ─── Camera Toggle ───────────────────────────────────────────────── */
+    .camera-controls {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    /* ─── Responsive ──────────────────────────────────────────────────── */
+    @media (max-width: 860px) {
+      .page-layout {
+        grid-template-columns: 1fr;
+        padding: 20px 16px;
+      }
+      .upload-panel { position: static; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a href="/" class="navbar-brand">Panorama<span>Forge</span></a>
+    <div class="navbar-actions">
+      <span class="nav-user-email"></span>
+      <button id="logout-btn" class="btn btn-ghost btn-sm">Log out</button>
+    </div>
+  </nav>
+
+  <div class="page-layout">
+    <!-- ─── Upload Panel ──────────────────────────────────────────────── -->
+    <aside class="upload-panel">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">New Panorama</span>
+        </div>
+
+        <!-- Title -->
+        <div class="form-group" style="margin-bottom:14px">
+          <label class="form-label" for="pano-title">Title (optional)</label>
+          <input type="text" id="pano-title" class="form-input" placeholder="My Panorama" maxlength="100">
+        </div>
+
+        <!-- Drop zone -->
+        <div class="drop-zone" id="drop-zone">
+          <input type="file" id="file-input" accept="image/*" multiple>
+          <div class="drop-icon">🖼</div>
+          <h3>Drop images here</h3>
+          <p>Or click to browse • JPEG, PNG, WebP</p>
+        </div>
+
+        <!-- Image previews -->
+        <div class="preview-grid" id="preview-grid"></div>
+
+        <!-- Camera section -->
+        <div class="camera-section" id="camera-section">
+          <video id="camera-video" autoplay muted playsinline></video>
+          <div class="camera-controls">
+            <button class="btn btn-secondary btn-sm" id="capture-btn" style="flex:1">
+              📷 Capture
+            </button>
+            <button class="btn btn-ghost btn-sm" id="stop-camera-btn">Stop</button>
+          </div>
+        </div>
+
+        <!-- Upload controls -->
+        <div class="upload-controls">
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost btn-sm" id="camera-btn" style="flex:1">
+              📸 Use Camera
+            </button>
+            <button class="btn btn-ghost btn-sm" id="clear-btn">Clear</button>
+          </div>
+          <button class="btn btn-primary btn-full" id="upload-btn" disabled>
+            Stitch Panorama
+          </button>
+          <p class="text-xs text-muted text-center" id="file-count">No images selected</p>
+        </div>
+
+        <!-- Progress indicator -->
+        <div class="upload-progress" id="upload-progress">
+          <div class="progress-label">
+            <span id="progress-label-text">Uploading...</span>
+            <span id="progress-pct">0%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill indeterminate" id="progress-fill"></div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ─── Gallery Panel ─────────────────────────────────────────────── -->
+    <main>
+      <div class="gallery-header">
+        <h2>Your Panoramas</h2>
+        <span class="gallery-count" id="gallery-count">—</span>
+      </div>
+
+      <div id="panorama-grid" class="panorama-grid">
+        <!-- Cards injected here -->
+      </div>
+
+      <div class="empty-state hidden" id="empty-state">
+        <div class="empty-state-icon">🌐</div>
+        <h3>No panoramas yet</h3>
+        <p>Upload 2+ images and click "Stitch Panorama" to create your first one.</p>
+      </div>
+
+      <div class="load-more-row hidden" id="load-more-row">
+        <button class="btn btn-secondary" id="load-more-btn">Load more</button>
+      </div>
+    </main>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal-overlay hidden" id="delete-modal">
+    <div class="modal">
+      <h3>Delete panorama?</h3>
+      <p>This will permanently delete the panorama and its image file. This action cannot be undone.</p>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="cancel-delete-btn">Cancel</button>
+        <button class="btn btn-danger" id="confirm-delete-btn">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="/js/api.js"></script>
+  <script>
+    // ─── Auth Guard ──────────────────────────────────────────────────────
+    requireAuth();
+
+    // ─── State ───────────────────────────────────────────────────────────
+    let selectedFiles = [];
+    let cameraStream = null;
+    let currentPage = 1;
+    let totalPages = 1;
+    let pendingDeleteId = null;
+    let pollingIntervals = {};
+
+    // ─── DOM References ──────────────────────────────────────────────────
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const previewGrid = document.getElementById('preview-grid');
+    const uploadBtn = document.getElementById('upload-btn');
+    const fileCount = document.getElementById('file-count');
+    const cameraBtn = document.getElementById('camera-btn');
+    const cameraSection = document.getElementById('camera-section');
+    const cameraVideo = document.getElementById('camera-video');
+    const captureBtn = document.getElementById('capture-btn');
+    const stopCameraBtn = document.getElementById('stop-camera-btn');
+    const clearBtn = document.getElementById('clear-btn');
+    const uploadProgress = document.getElementById('upload-progress');
+    const progressLabelText = document.getElementById('progress-label-text');
+    const panoramaGrid = document.getElementById('panorama-grid');
+    const emptyState = document.getElementById('empty-state');
+    const galleryCount = document.getElementById('gallery-count');
+    const loadMoreRow = document.getElementById('load-more-row');
+    const loadMoreBtn = document.getElementById('load-more-btn');
+    const deleteModal = document.getElementById('delete-modal');
+    const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+    const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+
+    // ─── File Handling ────────────────────────────────────────────────────
+    function addFiles(files) {
+      const arr = Array.from(files);
+      arr.forEach(file => {
+        if (!file.type.startsWith('image/')) return;
+        if (selectedFiles.find(f => f.name === file.name && f.size === file.size)) return;
+        selectedFiles.push(file);
+        addPreviewThumb(file, selectedFiles.length - 1);
+      });
+      updateFileCountUI();
+    }
+
+    function addPreviewThumb(file, index) {
+      const div = document.createElement('div');
+      div.className = 'preview-thumb';
+      div.dataset.index = index;
+
+      const img = document.createElement('img');
+      img.src = URL.createObjectURL(file);
+      img.alt = file.name;
+
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'remove-btn';
+      removeBtn.textContent = '✕';
+      removeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        selectedFiles.splice(index, 1);
+        rebuildPreviews();
+      });
+
+      div.appendChild(img);
+      div.appendChild(removeBtn);
+      previewGrid.appendChild(div);
+    }
+
+    function rebuildPreviews() {
+      previewGrid.innerHTML = '';
+      selectedFiles.forEach((file, i) => addPreviewThumb(file, i));
+      updateFileCountUI();
+    }
+
+    function updateFileCountUI() {
+      const n = selectedFiles.length;
+      fileCount.textContent = n === 0 ? 'No images selected'
+        : `${n} image${n === 1 ? '' : 's'} selected${n < 2 ? ' (need at least 2)' : ''}`;
+      uploadBtn.disabled = n < 2;
+    }
+
+    // File input / drop zone
+    fileInput.addEventListener('change', (e) => addFiles(e.target.files));
+
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('drag-over');
+    });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      addFiles(e.dataTransfer.files);
+    });
+
+    clearBtn.addEventListener('click', () => {
+      selectedFiles = [];
+      previewGrid.innerHTML = '';
+      fileInput.value = '';
+      updateFileCountUI();
+    });
+
+    // ─── Camera ───────────────────────────────────────────────────────────
+    cameraBtn.addEventListener('click', async () => {
+      if (cameraStream) return;
+      try {
+        cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        cameraVideo.srcObject = cameraStream;
+        cameraSection.classList.add('active');
+        cameraBtn.disabled = true;
+      } catch (err) {
+        Toast.error('Camera access denied or unavailable.');
+      }
+    });
+
+    captureBtn.addEventListener('click', () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = cameraVideo.videoWidth;
+      canvas.height = cameraVideo.videoHeight;
+      canvas.getContext('2d').drawImage(cameraVideo, 0, 0);
+      canvas.toBlob(blob => {
+        const file = new File([blob], `capture-${Date.now()}.jpg`, { type: 'image/jpeg' });
+        addFiles([file]);
+        Toast.success('Image captured!');
+      }, 'image/jpeg', 0.92);
+    });
+
+    stopCameraBtn.addEventListener('click', stopCamera);
+
+    function stopCamera() {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(t => t.stop());
+        cameraStream = null;
+      }
+      cameraSection.classList.remove('active');
+      cameraBtn.disabled = false;
+    }
+
+    // ─── Upload & Stitch ──────────────────────────────────────────────────
+    uploadBtn.addEventListener('click', async () => {
+      if (selectedFiles.length < 2) return;
+
+      const formData = new FormData();
+      const title = document.getElementById('pano-title').value.trim();
+      if (title) formData.append('title', title);
+      selectedFiles.forEach(f => formData.append('images', f));
+
+      uploadBtn.disabled = true;
+      uploadProgress.classList.add('visible');
+      progressLabelText.textContent = 'Uploading images...';
+
+      try {
+        const result = await PanoramaAPI.upload(formData);
+        Toast.info('Stitching started — this may take a minute...');
+        progressLabelText.textContent = 'Stitching in progress...';
+
+        // Add a processing card to gallery immediately
+        addProcessingCard(result.panoramaId, title || 'Untitled Panorama');
+
+        // Poll for status
+        startStatusPolling(result.panoramaId);
+
+        // Clear upload form
+        selectedFiles = [];
+        previewGrid.innerHTML = '';
+        fileInput.value = '';
+        document.getElementById('pano-title').value = '';
+        updateFileCountUI();
+      } catch (err) {
+        Toast.error(err.message || 'Upload failed. Please try again.');
+      } finally {
+        uploadBtn.disabled = false;
+        uploadProgress.classList.remove('visible');
+      }
+    });
+
+    // ─── Status Polling ───────────────────────────────────────────────────
+    function startStatusPolling(id) {
+      if (pollingIntervals[id]) return;
+      pollingIntervals[id] = setInterval(async () => {
+        try {
+          const status = await PanoramaAPI.status(id);
+          if (status.status === 'ready') {
+            clearInterval(pollingIntervals[id]);
+            delete pollingIntervals[id];
+            updateCardToReady(id, status);
+            Toast.success(`"${status.title}" is ready!`);
+          } else if (status.status === 'failed') {
+            clearInterval(pollingIntervals[id]);
+            delete pollingIntervals[id];
+            updateCardToFailed(id, status.errorMessage);
+            Toast.error('Stitching failed. Check image overlap and try again.');
+          }
+        } catch (_) {}
+      }, 3000); // Poll every 3 seconds
+    }
+
+    // ─── Gallery ──────────────────────────────────────────────────────────
+    async function loadGallery(page = 1) {
+      try {
+        const data = await PanoramaAPI.list(page, 12);
+        totalPages = data.pagination.pages;
+        galleryCount.textContent = `${data.pagination.total} total`;
+
+        if (page === 1) panoramaGrid.innerHTML = '';
+
+        if (data.panoramas.length === 0 && page === 1) {
+          emptyState.classList.remove('hidden');
+        } else {
+          emptyState.classList.add('hidden');
+          data.panoramas.forEach(p => panoramaGrid.appendChild(createPanoCard(p)));
+
+          // Resume polling for processing panoramas
+          data.panoramas.forEach(p => {
+            if (p.status === 'processing') startStatusPolling(p._id);
+          });
+        }
+
+        loadMoreRow.classList.toggle('hidden', page >= totalPages);
+      } catch (err) {
+        Toast.error('Failed to load gallery.');
+      }
+    }
+
+    function createPanoCard(pano) {
+      const card = document.createElement('div');
+      card.className = 'pano-card';
+      card.dataset.id = pano._id;
+      card.innerHTML = buildCardHTML(pano);
+      attachCardEvents(card, pano._id);
+      return card;
+    }
+
+    function buildCardHTML(pano) {
+      const date = formatDate(pano.createdAt);
+      const badge = `<span class="badge badge-${pano.status}">${pano.status}</span>`;
+
+      let thumbHTML = '';
+      if (pano.status === 'ready') {
+        thumbHTML = `
+          <div class="pano-thumb" onclick="viewPanorama('${pano._id}')">
+            <img src="${pano.imageUrl}" alt="${pano.title}" loading="lazy">
+            <div class="pano-thumb-overlay">
+              <button class="pano-view-btn">View 360°</button>
+            </div>
+          </div>`;
+      } else if (pano.status === 'processing') {
+        thumbHTML = `
+          <div class="pano-placeholder">
+            <div class="spinner"></div>
+            <span>Stitching...</span>
+          </div>`;
+      } else {
+        thumbHTML = `
+          <div class="pano-placeholder">
+            <span style="font-size:1.4rem">⚠</span>
+            <span>Failed</span>
+          </div>`;
+      }
+
+      return `
+        ${thumbHTML}
+        <div class="pano-info">
+          <div class="pano-info-top">
+            <span class="pano-title" title="${pano.title}">${pano.title}</span>
+            ${badge}
+          </div>
+          <div class="pano-meta">
+            <span>${date}</span>
+            ${pano.sourceImageCount ? `<span>· ${pano.sourceImageCount} imgs</span>` : ''}
+          </div>
+          <div class="pano-actions">
+            ${pano.status === 'ready' ? `<button class="btn btn-secondary btn-sm" onclick="viewPanorama('${pano._id}')">View 360°</button>` : ''}
+            <button class="btn btn-danger btn-sm delete-btn" data-id="${pano._id}">Delete</button>
+          </div>
+        </div>`;
+    }
+
+    function attachCardEvents(card) {
+      card.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', () => promptDelete(btn.dataset.id));
+      });
+    }
+
+    function addProcessingCard(id, title) {
+      // Remove empty state
+      emptyState.classList.add('hidden');
+
+      const pano = { _id: id, title, status: 'processing', createdAt: new Date().toISOString(), sourceImageCount: selectedFiles.length };
+      const card = createPanoCard(pano);
+      panoramaGrid.prepend(card);
+    }
+
+    function updateCardToReady(id, data) {
+      const card = panoramaGrid.querySelector(`[data-id="${id}"]`);
+      if (!card) return;
+      // Reload the full panorama to get imageUrl
+      PanoramaAPI.get(id).then(res => {
+        card.innerHTML = buildCardHTML(res.panorama);
+        attachCardEvents(card);
+      });
+    }
+
+    function updateCardToFailed(id) {
+      const card = panoramaGrid.querySelector(`[data-id="${id}"]`);
+      if (!card) return;
+      const placeholder = card.querySelector('.pano-placeholder');
+      if (placeholder) {
+        placeholder.innerHTML = '<span style="font-size:1.4rem">⚠</span><span>Failed</span>';
+      }
+      const badge = card.querySelector('.badge');
+      if (badge) {
+        badge.className = 'badge badge-failed';
+        badge.textContent = 'failed';
+      }
+    }
+
+    // ─── View Panorama ────────────────────────────────────────────────────
+    function viewPanorama(id) {
+      window.location.href = `/viewer?id=${id}`;
+    }
+
+    // ─── Delete ───────────────────────────────────────────────────────────
+    function promptDelete(id) {
+      pendingDeleteId = id;
+      deleteModal.classList.remove('hidden');
+    }
+
+    cancelDeleteBtn.addEventListener('click', () => {
+      pendingDeleteId = null;
+      deleteModal.classList.add('hidden');
+    });
+
+    deleteModal.addEventListener('click', (e) => {
+      if (e.target === deleteModal) {
+        pendingDeleteId = null;
+        deleteModal.classList.add('hidden');
+      }
+    });
+
+    confirmDeleteBtn.addEventListener('click', async () => {
+      if (!pendingDeleteId) return;
+      const id = pendingDeleteId;
+      deleteModal.classList.add('hidden');
+      pendingDeleteId = null;
+
+      try {
+        await PanoramaAPI.delete(id);
+        const card = panoramaGrid.querySelector(`[data-id="${id}"]`);
+        if (card) card.remove();
+        Toast.success('Panorama deleted.');
+
+        // Update count
+        const countEl = document.getElementById('gallery-count');
+        const current = parseInt(countEl.textContent) || 0;
+        countEl.textContent = `${Math.max(0, current - 1)} total`;
+
+        if (panoramaGrid.children.length === 0) {
+          emptyState.classList.remove('hidden');
+        }
+      } catch (err) {
+        Toast.error('Failed to delete panorama.');
+      }
+    });
+
+    // ─── Load More ────────────────────────────────────────────────────────
+    loadMoreBtn.addEventListener('click', () => {
+      currentPage++;
+      loadGallery(currentPage);
+    });
+
+    // ─── Init ─────────────────────────────────────────────────────────────
+    loadGallery(1);
+  </script>
+</body>
+</html>
