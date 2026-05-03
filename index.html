@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PanoramaForge — 360° Panorama Studio</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body { overflow-x: hidden; }
+
+    /* ─── Hero ─────────────────────────────────────────────────────────── */
+    .hero {
+      min-height: calc(100vh - 60px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 60px 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% 0%, rgba(232,160,69,0.08) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 40% at 80% 100%, rgba(91,155,213,0.05) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .hero-eyebrow {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 20px;
+      opacity: 0;
+      animation: fadeUp 0.6s 0.1s ease forwards;
+    }
+
+    .hero-title {
+      font-size: clamp(2.8rem, 8vw, 5.5rem);
+      font-weight: 800;
+      line-height: 1.05;
+      letter-spacing: -0.04em;
+      max-width: 800px;
+      margin-bottom: 24px;
+      opacity: 0;
+      animation: fadeUp 0.6s 0.2s ease forwards;
+    }
+
+    .hero-title .accent { color: var(--accent); }
+
+    .hero-sub {
+      font-size: clamp(1rem, 2.5vw, 1.2rem);
+      color: var(--text-secondary);
+      max-width: 520px;
+      line-height: 1.7;
+      margin-bottom: 40px;
+      opacity: 0;
+      animation: fadeUp 0.6s 0.3s ease forwards;
+    }
+
+    .hero-cta {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+      opacity: 0;
+      animation: fadeUp 0.6s 0.4s ease forwards;
+    }
+
+    /* ─── Grid preview ─────────────────────────────────────────────────── */
+    .preview-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      max-width: 640px;
+      margin: 64px auto 0;
+      opacity: 0;
+      animation: fadeUp 0.7s 0.5s ease forwards;
+    }
+
+    .preview-cell {
+      aspect-ratio: 16/9;
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      position: relative;
+    }
+
+    .preview-cell::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg,
+        rgba(232,160,69,0.06) 0%,
+        transparent 50%,
+        rgba(91,155,213,0.04) 100%
+      );
+    }
+
+    .preview-center {
+      grid-column: 1 / -1;
+      aspect-ratio: 21/8;
+      border: 1px solid rgba(232,160,69,0.2);
+      background: linear-gradient(135deg, rgba(232,160,69,0.05), rgba(91,155,213,0.05));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--accent);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    /* ─── Features ─────────────────────────────────────────────────────── */
+    .features {
+      max-width: 960px;
+      margin: 80px auto;
+      padding: 0 24px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px;
+    }
+
+    .feature-card {
+      padding: 28px;
+      border-radius: var(--radius-lg);
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      transition: border-color var(--transition), transform var(--transition);
+    }
+
+    .feature-card:hover {
+      border-color: var(--border-light);
+      transform: translateY(-2px);
+    }
+
+    .feature-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius);
+      background: var(--accent-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      margin-bottom: 16px;
+      border: 1px solid rgba(232,160,69,0.15);
+    }
+
+    .feature-card h3 {
+      font-size: 1rem;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+    }
+
+    .feature-card p {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    /* ─── Footer ───────────────────────────────────────────────────────── */
+    footer {
+      text-align: center;
+      padding: 32px 24px;
+      border-top: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 0.8rem;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: none; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a href="/" class="navbar-brand">Panorama<span>Forge</span></a>
+    <div class="navbar-actions">
+      <a href="/login" class="btn btn-ghost btn-sm">Log In</a>
+      <a href="/register" class="btn btn-primary btn-sm">Get Started</a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <p class="hero-eyebrow">360° Panorama Studio</p>
+    <h1 class="hero-title">
+      Stitch the world into<br>
+      a single <span class="accent">panorama</span>
+    </h1>
+    <p class="hero-sub">
+      Upload a series of photos and let our AI-powered engine stitch them
+      into an immersive, interactive 360° panorama — in seconds.
+    </p>
+    <div class="hero-cta">
+      <a href="/register" class="btn btn-primary btn-lg">Start for free</a>
+      <a href="/login" class="btn btn-secondary btn-lg">Sign in</a>
+    </div>
+    <div class="preview-grid">
+      <div class="preview-cell"></div>
+      <div class="preview-cell"></div>
+      <div class="preview-cell"></div>
+      <div class="preview-center">✦ 360° Equirectangular Output</div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="features">
+    <div class="feature-card">
+      <div class="feature-icon">📸</div>
+      <h3>Camera Capture</h3>
+      <p>Use your device's camera to capture images directly in the browser, or upload existing photos.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🧠</div>
+      <h3>OpenCV Stitching</h3>
+      <p>State-of-the-art computer vision algorithms detect features and stitch images into seamless panoramas.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🌍</div>
+      <h3>Immersive Viewer</h3>
+      <p>Explore your panoramas in an interactive Three.js viewer with drag-to-rotate and zoom support.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔐</div>
+      <h3>Private Gallery</h3>
+      <p>All your panoramas are securely stored in your personal gallery with JWT-protected access.</p>
+    </div>
+  </section>
+
+  <footer>
+    <p>PanoramaForge &mdash; Built with OpenCV, Three.js &amp; Node.js</p>
+  </footer>
+
+  <div id="toast-container"></div>
+  <script src="/js/api.js"></script>
+  <script>
+    // Redirect logged-in users to dashboard
+    if (Auth.isLoggedIn()) {
+      document.querySelectorAll('.hero-cta .btn').forEach(btn => {
+        btn.textContent = 'Go to Dashboard';
+        btn.href = '/dashboard';
+      });
+    }
+  </script>
+</body>
+</html>
